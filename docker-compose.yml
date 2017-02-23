@@ -1,0 +1,38 @@
+version: "2"
+services:
+  mysql_db:
+    # build: ./mysql
+    image: mysql:5.7
+    volumes:
+      # - /home/mysql_5.7/rap/conf:/etc/mysql
+      - /home/mysql_5.7/rap/data:/var/lib/mysql
+    ports:
+      - 3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=mysql12345678
+      - MYSQL_ONETIME_PASSWORD=yes
+      - MYSQL_USER=rap
+      - MYSQL_PASSWORD=rap1234
+      - MYSQL_DATABASE=rap_db
+  redis_db:
+    image: redis:3.2
+    volumes:
+      - /home/redis_3.2/rap/conf:/usr/local/etc/redis
+      - /home/redis_3.2/rap/data:/data
+  rap:
+    build: .
+    ports:
+      - "18000:8080"
+    depends_on:
+      - mysql_db
+    command: ["./wait-mysql.sh", "/opt/tomcat/bin/catalina.sh run"]
+    links:
+      - mysql_db:mysql_db
+      - redis_db:redis_db
+    environment:
+      - DB_TYPE=mysql
+      - DB_PORT=3306
+      - DB_HOST=mysql_db
+      - DB_USER=rap
+      - DB_PASS=rap1234
+      - DB_NAME=rap_db
