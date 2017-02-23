@@ -3,6 +3,8 @@ FROM openjdk:7
 EXPOSE 8080
 
 ARG TOMCAT_USER=tomcat
+ARG DB_USER
+ARG DB_PASS
 
 ENV TOMCAT_VERSION 8.5.11
 ENV RAP_VERSION 0.14.1
@@ -21,8 +23,8 @@ COPY RAP-${RAP_VERSION}-SNAPSHOT.war .
 
 # initial mysql database
 RUN unzip RAP-${RAP_VERSION}-SNAPSHOT.war -d ROOT \
-	&& sed 's/jdbc.username=root/jdbc.username=rap/' -i ROOT/WEB-INF/classes/config.properties \
-	&& sed 's/jdbc.password=/jdbc.password=rap1234/' -i ROOT/WEB-INF/classes/config.properties \
+	&& sed 's/jdbc.username=root/jdbc.username=${DB_USER}/' -i ROOT/WEB-INF/classes/config.properties \
+	&& sed 's/jdbc.password=/jdbc.password=${DB_PASS}/' -i ROOT/WEB-INF/classes/config.properties \
 	&& sed 's/\/localhost/\/mysql_db/' -i ROOT/WEB-INF/classes/config.properties \
 	&& sed 's/redis.host=localhost/redis.host=redis_db/' -i ROOT/WEB-INF/classes/config.properties \
 	&& cat ROOT/WEB-INF/classes/config.properties \
@@ -33,6 +35,12 @@ RUN unzip RAP-${RAP_VERSION}-SNAPSHOT.war -d ROOT \
 	&& chown -R ${TOMCAT_USER}:${TOMCAT_USER} /opt/tomcat/webapps/ROOT
 
 # RUN mysql -h mysql_db -u rap -p rap1234 -D rap_db < ROOT/WEB-INF/classes/database/initialize.sql
+
+# COPY init_db.sql .
+# 
+# RUN sed 's/rap_db/${DB_NAME}/g' -i init_db.sql \
+# 	sed 's/rap/${DB_USER}/' -i init_db.sql \
+# 	sed 's/password/${DB_PASS}/' -i init_db.sql
 
 COPY wait-mysql.sh .
 
